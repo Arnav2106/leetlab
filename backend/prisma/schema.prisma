@@ -84,6 +84,7 @@ model Submission {
   status        String // Accepted , wrong answer
   memory        String?
   time          String?
+  timeSpent     Int?   // Total duration in seconds the user spent solving the problem
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

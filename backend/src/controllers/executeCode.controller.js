@@ -1,16 +1,8 @@
 import { db } from "../libs/db.js";
-import { getLanguageName, submitBatch } from "../libs/judge0.lib.js";
+import { getLanguageName, LANGUAGE_MAP } from "../libs/piston.lib.js";
 import axios from "axios";
 
 const PISTON_API = "https://emkc.org/api/v2/piston";
-
-const LANGUAGE_MAP = {
-  63: { language: "javascript", version: "18.15.0" },
-  71: { language: "python",     version: "3.10.0"  },
-  62: { language: "java",       version: "15.0.2"  },
-  74: { language: "typescript", version: "5.0.3"   },
-  54: { language: "c++",        version: "10.2.0"  },
-};
 
 // Run a single test case through Piston
 const runWithPiston = async (source_code, language_id, stdin) => {
@@ -18,8 +10,8 @@ const runWithPiston = async (source_code, language_id, stdin) => {
   if (!langConfig) throw new Error(`Unsupported language ID: ${language_id}`);
 
   const { data } = await axios.post(`${PISTON_API}/execute`, {
-    language: langConfig.language,
-    version: langConfig.version,
+    language: langConfig.piston.language,
+    version: langConfig.piston.version,
     files: [{ content: source_code }],
     stdin: stdin || "",
   });
@@ -34,8 +26,8 @@ const runWithPiston = async (source_code, language_id, stdin) => {
     status: hasCompileError
       ? "Compilation Error"
       : exitCode !== 0
-      ? "Runtime Error"
-      : "Accepted",
+        ? "Runtime Error"
+        : "Accepted",
     time: data.run?.wall_time != null ? `${data.run.wall_time} s` : null,
     memory: data.run?.memory != null ? `${data.run.memory} KB` : null,
   };
@@ -43,7 +35,7 @@ const runWithPiston = async (source_code, language_id, stdin) => {
 
 export const executeCode = async (req, res) => {
   try {
-    const { source_code, language_id, stdin, expected_outputs, problemId } = req.body;
+    const { source_code, language_id, stdin, expected_outputs, problemId, timeSpent } = req.body;
     const userId = req.user.id;
 
     if (
@@ -102,6 +94,7 @@ export const executeCode = async (req, res) => {
         time: detailedResults.some((r) => r.time)
           ? JSON.stringify(detailedResults.map((r) => r.time))
           : null,
+        timeSpent: timeSpent || null,
       },
     });
 

@@ -9,7 +9,7 @@ A LeetCode-inspired platform where users can practice coding problems with real-
 - **Authentication** — Register/Login with JWT-based cookie auth
 - **Role-Based Access** — Admin (manage problems) vs User (solve problems)
 - **Code Editor** — Monaco Editor (same editor as VS Code) with multi-language support
-- **Real-Time Execution** — Code runs via Judge0 (supports Python, JavaScript, Java)
+- **Real-Time Execution** — Code runs via Piston Sandbox (supports Python, JavaScript, Java, C++, Go, Rust, Ruby and more)
 - **Submission Tracking** — Every run is saved with pass/fail per test case
 - **Playlists** — Organize problems into personal collections
 - **Solved Problems** — Track which problems you've completed
@@ -21,7 +21,7 @@ A LeetCode-inspired platform where users can practice coding problems with real-
 | Layer | Tech |
 |---|---|
 | Backend | Node.js, Express.js, Prisma ORM, PostgreSQL |
-| Code Execution | Judge0 (self-hosted via Docker) |
+| Code Execution | Piston Engine API (emkc.org/api/v2/piston) |
 | Frontend | React 19, Vite, Tailwind CSS, DaisyUI |
 | State Management | Zustand |
 | Form Handling | React Hook Form + Zod |
@@ -33,9 +33,10 @@ A LeetCode-inspired platform where users can practice coding problems with real-
 
 ### Prerequisites
 
+### Prerequisites
+
 - Node.js v18+
 - PostgreSQL (local or cloud like [Neon](https://neon.tech))
-- Docker + Docker Compose (for Judge0 on Linux/WSL2)
 
 ---
 
@@ -48,30 +49,7 @@ cd leetlab
 
 ---
 
-### 2. Set up Judge0 (Code Execution Engine)
-
-> ⚠️ Judge0 only works on **Linux** or **WSL2 on Windows**. Mac users should use a Linux VM or a cloud Judge0 instance.
-
-```bash
-# Download Judge0
-wget https://github.com/judge0/judge0/releases/download/v1.13.1/judge0-v1.13.1.zip
-unzip judge0-v1.13.1.zip && cd judge0-v1.13.1
-
-# Edit judge0.conf and set strong passwords for REDIS_PASSWORD and POSTGRES_PASSWORD
-nano judge0.conf
-
-# Start Judge0
-docker-compose up -d db redis
-sleep 10
-docker-compose up -d
-sleep 5
-```
-
-Verify at: `http://localhost:2358/docs`
-
----
-
-### 3. Backend Setup
+### 2. Backend Setup
 
 ```bash
 cd backend
@@ -85,7 +63,6 @@ Edit `.env`:
 ```
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/leetlab"
 JWT_SECRET="your-secret-key"
-JUDGE0_API_URL="http://localhost:2358"
 PORT=8081
 NODE_ENV=development
 ```
@@ -140,7 +117,7 @@ leetlab/
 │   │   ├── controllers/        # Route logic
 │   │   ├── routes/             # Express routes
 │   │   ├── middleware/         # Auth & admin checks
-│   │   └── libs/               # Judge0 client, Prisma client
+│   │   └── libs/               # Piston client, Prisma client
 │   └── .env.example
 ├── frontend/
 │   └── src/
@@ -200,7 +177,6 @@ leetlab/
 
 ## 🐛 Known Limitations
 
-- Judge0 requires Linux/WSL2 for self-hosting
 - The "Bookmark" button and "Submit Solution" button on the problem page are UI-only (not yet wired to backend)
 - Discussion tab is a placeholder (not implemented)
 - No password reset functionality

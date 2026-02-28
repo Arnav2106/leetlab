@@ -6,7 +6,7 @@ export const useExecutionStore = create((set) => ({
   isExecuting: false,
   submission: null,
 
-  executeCode: async (source_code, language_id, stdin, expected_outputs, problemId) => {
+  executeCode: async (source_code, language_id, stdin, expected_outputs, problemId, timeSpent) => {
     try {
       set({ isExecuting: true });
       const res = await axiosInstance.post("/execute-code", {
@@ -15,6 +15,7 @@ export const useExecutionStore = create((set) => ({
         stdin,
         expected_outputs,
         problemId,
+        timeSpent,
       });
       set({ submission: res.data.submission });
       toast.success(res.data.message);

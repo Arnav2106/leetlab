@@ -40,6 +40,7 @@ const ProblemPage = () => {
   const [selectedLanguage, setSelectedLanguage] = useState("JAVASCRIPT");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [testcases, setTestCases] = useState([]);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const { executeCode, submission, isExecuting } = useExecutionStore();
 
@@ -47,6 +48,13 @@ const ProblemPage = () => {
     getProblemById(id);
     getSubmissionCountForProblem(id);
   }, [id]);
+
+  useEffect(() => {
+    const timerInterval = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timerInterval);
+  }, []);
 
   useEffect(() => {
     if (problem) {
@@ -75,10 +83,21 @@ const ProblemPage = () => {
       const language_id = getLanguageId(selectedLanguage);
       const stdin = problem.testcases.map((tc) => tc.input);
       const expected_outputs = problem.testcases.map((tc) => tc.output);
-      executeCode(code, language_id, stdin, expected_outputs, id);
+      executeCode(code, language_id, stdin, expected_outputs, id, elapsedTime);
     } catch (error) {
       console.log("Error executing code", error);
     }
+  };
+
+  const handleSubmitSolution = (e) => {
+    e.preventDefault();
+    handleRunCode(e); // Trigger same run execution
+  };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
   };
 
   if (isProblemLoading || !problem) {
@@ -187,6 +206,10 @@ const ProblemPage = () => {
         </div>
 
         <div className="flex-none gap-4 items-center">
+          <div className="flex items-center gap-2 bg-base-200 px-4 py-2 rounded-lg font-mono text-lg text-primary mr-4 border border-primary/20">
+            <Clock className="w-5 h-5" />
+            {formatTime(elapsedTime)}
+          </div>
           <button
             className={`btn btn-ghost btn-circle ${isBookmarked ? "text-primary" : ""}`}
             onClick={() => setIsBookmarked(!isBookmarked)}
@@ -269,7 +292,13 @@ const ProblemPage = () => {
                     {!isExecuting && <Play className="w-4 h-4" />}
                     Run Code
                   </button>
-                  <button className="btn btn-success gap-2">Submit Solution</button>
+                  <button
+                    className={`btn btn-success gap-2 ${isExecuting ? "loading" : ""}`}
+                    onClick={handleSubmitSolution}
+                    disabled={isExecuting}
+                  >
+                    Submit Solution
+                  </button>
                 </div>
               </div>
             </div>

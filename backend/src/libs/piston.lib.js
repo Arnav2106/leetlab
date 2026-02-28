@@ -3,19 +3,29 @@ import axios from "axios";
 const PISTON_API = "https://emkc.org/api/v2/piston";
 
 // Map language IDs to Piston config
-const LANGUAGE_MAP = {
-  63: { name: "JAVASCRIPT", piston: { language: "javascript", version: "18.15.0" } },
-  71: { name: "PYTHON",     piston: { language: "python",     version: "3.10.0"  } },
-  62: { name: "JAVA",       piston: { language: "java",       version: "15.0.2"  } },
-  74: { name: "TYPESCRIPT", piston: { language: "typescript", version: "5.0.3"   } },
-  54: { name: "C++",        piston: { language: "c++",        version: "10.2.0"  } },
+export const LANGUAGE_MAP = {
+  // Classic LeetCode defaults
+  63: { name: "JAVASCRIPT", piston: { language: "javascript", version: "*", aliases: ["node", "js"] } },
+  71: { name: "PYTHON", piston: { language: "python", version: "*" } },
+  62: { name: "JAVA", piston: { language: "java", version: "*" } },
+  74: { name: "TYPESCRIPT", piston: { language: "typescript", version: "*" } },
+  54: { name: "C++", piston: { language: "c++", version: "*" } },
+  // Extended support
+  50: { name: "C", piston: { language: "c", version: "*" } },
+  51: { name: "C#", piston: { language: "csharp", version: "*" } },
+  60: { name: "GO", piston: { language: "go", version: "*" } },
+  73: { name: "RUST", piston: { language: "rust", version: "*" } },
+  72: { name: "RUBY", piston: { language: "ruby", version: "*" } },
+  68: { name: "PHP", piston: { language: "php", version: "*" } },
+  83: { name: "SWIFT", piston: { language: "swift", version: "*" } },
+  82: { name: "SQL", piston: { language: "sqlite3", version: "*" } },
 };
 
 export function getLanguageName(languageId) {
   return LANGUAGE_MAP[languageId]?.name || "Unknown";
 }
 
-export function getJudge0LanguageId(language) {
+export function getPistonLanguageId(language) {
   const map = {
     JAVASCRIPT: 63,
     PYTHON: 71,
@@ -23,6 +33,15 @@ export function getJudge0LanguageId(language) {
     TYPESCRIPT: 74,
     "C++": 54,
     CPP: 54,
+    C: 50,
+    "C#": 51,
+    CSHARP: 51,
+    GO: 60,
+    RUST: 73,
+    RUBY: 72,
+    PHP: 68,
+    SWIFT: 83,
+    SQL: 82,
   };
   return map[language.toUpperCase()];
 }
@@ -59,8 +78,7 @@ export const submitBatch = async (submissions) => {
       runWithPiston(sub.source_code, sub.language_id, sub.stdin)
     )
   );
-  // Return in same shape as Judge0 batch — each item has a token field
-  // We skip tokens since Piston gives results directly
+  // Return shape — each item has a token field
   return results.map((r, i) => ({ ...r, token: `piston-${i}` }));
 };
 

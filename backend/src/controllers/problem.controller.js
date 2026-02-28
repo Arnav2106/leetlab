@@ -1,9 +1,9 @@
 import { db } from "../libs/db.js";
 import {
-  getJudge0LanguageId,
+  getPistonLanguageId,
   pollBatchResults,
   submitBatch,
-} from "../libs/judge0.lib.js";
+} from "../libs/piston.lib.js";
 
 export const createProblem = async (req, res) => {
   const {
@@ -22,7 +22,7 @@ export const createProblem = async (req, res) => {
 
   try {
     for (const [language, solutionCode] of Object.entries(referenceSolutions)) {
-      const languageId = getJudge0LanguageId(language);
+      const languageId = getPistonLanguageId(language);
 
       if (!languageId) {
         return res
@@ -90,10 +90,10 @@ export const getAllProblems = async (req, res) => {
   try {
     const problems = await db.problem.findMany(
       {
-        include:{
-          solvedBy:{
-            where:{
-              userId:req.user.id
+        include: {
+          solvedBy: {
+            where: {
+              userId: req.user.id
             }
           }
         }
@@ -170,7 +170,7 @@ export const updateProblem = async (req, res) => {
     // Validate reference solutions against test cases before saving
     if (referenceSolutions && testcases) {
       for (const [language, solutionCode] of Object.entries(referenceSolutions)) {
-        const languageId = getJudge0LanguageId(language);
+        const languageId = getPistonLanguageId(language);
 
         if (!languageId) {
           return res.status(400).json({ error: `Language ${language} is not supported` });
@@ -250,29 +250,29 @@ export const deleteProblem = async (req, res) => {
 export const getAllProblemsSolvedByUser = async (req, res) => {
   try {
     const problems = await db.problem.findMany({
-      where:{
-        solvedBy:{
-          some:{
-            userId:req.user.id
+      where: {
+        solvedBy: {
+          some: {
+            userId: req.user.id
           }
         }
       },
-      include:{
-        solvedBy:{
-          where:{
-            userId:req.user.id
+      include: {
+        solvedBy: {
+          where: {
+            userId: req.user.id
           }
         }
       }
     })
 
     res.status(200).json({
-      success:true,
-      message:"Problems fetched successfully",
+      success: true,
+      message: "Problems fetched successfully",
       problems
     })
   } catch (error) {
-    console.error("Error fetching problems :" , error);
-    res.status(500).json({error:"Failed to fetch problems"})
+    console.error("Error fetching problems :", error);
+    res.status(500).json({ error: "Failed to fetch problems" })
   }
 };
