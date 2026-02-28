@@ -14,6 +14,7 @@ import {
   Users,
   ThumbsUp,
   Home,
+  Star,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useProblemStore } from "../store/useProblemStore";
@@ -22,6 +23,7 @@ import { useExecutionStore } from "../store/useExecutionStore";
 import { useSubmissionStore } from "../store/useSubmissionStore";
 import Submission from "../components/Submission";
 import SubmissionsList from "../components/SubmissionList";
+import CodeRater from "../components/CodeRater";
 
 const ProblemPage = () => {
   const { id } = useParams();
@@ -41,6 +43,7 @@ const ProblemPage = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [testcases, setTestCases] = useState([]);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showRater, setShowRater] = useState(false);
 
   const { executeCode, submission, isExecuting } = useExecutionStore();
 
@@ -299,6 +302,14 @@ const ProblemPage = () => {
                   >
                     Submit Solution
                   </button>
+                  {submission?.id && (
+                    <button
+                      className="btn btn-warning gap-2"
+                      onClick={() => setShowRater(true)}
+                    >
+                      <Star className="w-4 h-4" /> Rate My Code
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -335,6 +346,12 @@ const ProblemPage = () => {
           </div>
         </div>
       </div>
+      {showRater && (
+        <CodeRater
+          submissionId={submission?.id}
+          onClose={() => setShowRater(false)}
+        />
+      )}
     </div>
   );
 };

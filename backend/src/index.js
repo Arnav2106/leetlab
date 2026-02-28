@@ -8,6 +8,7 @@ import problemRoutes from "./routes/problem.routes.js";
 import executionRoute from "./routes/executeCode.routes.js";
 import submissionRoutes from "./routes/submission.routes.js";
 import playlistRoutes from "./routes/playlist.routes.js";
+import rateCodeRoutes from "./routes/rateCode.routes.js";
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use("/api/v1/problems", problemRoutes);
 app.use("/api/v1/execute-code", executionRoute);
 app.use("/api/v1/submission", submissionRoutes);
 app.use("/api/v1/playlist", playlistRoutes);
+app.use("/api/v1/rate-code", rateCodeRoutes);
 
 // FIX: Global error handler middleware
 app.use((err, req, res, next) => {
