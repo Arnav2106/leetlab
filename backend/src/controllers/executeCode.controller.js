@@ -4,39 +4,52 @@ import axios from "axios";
 
 // Run a single test case through Judge0 CE
 const runWithJudge0 = async (source_code, language_id, stdin) => {
-  const langConfig = LANGUAGE_MAP[language_id];
-  if (!langConfig) throw new Error(`Unsupported language ID: ${language_id}`);
+  try {
+    const langConfig = LANGUAGE_MAP[language_id];
+    if (!langConfig) throw new Error(`Unsupported language ID: ${language_id}`);
 
-  const { data } = await axios.post(
-    `${JUDGE0_API}/submissions?base64_encoded=false&wait=true`,
-    {
-      source_code,
-      language_id: langConfig.judge0Id,
-      stdin: stdin || "",
-    },
-    {
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+    const { data } = await axios.post(
+      `${JUDGE0_API}/submissions?base64_encoded=false&wait=true`,
+      {
+        source_code,
+        language_id: langConfig.judge0Id,
+        stdin: stdin || "",
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        timeout: 15000, // 15s timeout
+      }
+    );
 
-  const statusDesc = data.status?.description || "Unknown";
-  const isAccepted = data.status?.id === 3;
-  const isCompileError = data.status?.id === 6;
+    const statusDesc = data.status?.description || "Unknown";
+    const isAccepted = data.status?.id === 3;
+    const isCompileError = data.status?.id === 6;
 
-  return {
-    stdout: data.stdout?.trim() || "",
-    stderr: data.stderr || null,
-    compile_output: data.compile_output || null,
-    status: isCompileError
-      ? "Compilation Error"
-      : isAccepted
-        ? "Accepted"
-        : statusDesc === "Wrong Answer"
-          ? "Wrong Answer"
-          : "Runtime Error",
-    time: data.time ? `${data.time} s` : null,
-    memory: data.memory ? `${data.memory} KB` : null,
-  };
+    return {
+      stdout: data.stdout?.trim() || "",
+      stderr: data.stderr || null,
+      compile_output: data.compile_output || null,
+      status: isCompileError
+        ? "Compilation Error"
+        : isAccepted
+          ? "Accepted"
+          : statusDesc === "Wrong Answer"
+            ? "Wrong Answer"
+            : "Runtime Error",
+      time: data.time ? `${data.time} s` : null,
+      memory: data.memory ? `${data.memory} KB` : null,
+    };
+  } catch (error) {
+    console.error("Judge0 API Error:", error.response?.data || error.message);
+    return {
+      stdout: "",
+      stderr: "Code execution service limit reached or unavailable. Please try again in a moment.",
+      compile_output: null,
+      status: "Service Error",
+      time: null,
+      memory: null,
+    };
+  }
 };
 
 export const executeCode = async (req, res) => {
@@ -53,10 +66,14 @@ export const executeCode = async (req, res) => {
       return res.status(400).json({ error: "Invalid or Missing test cases" });
     }
 
-    // Run all test cases in parallel via Judge0 CE
-    const results = await Promise.all(
-      stdin.map((input) => runWithJudge0(source_code, language_id, input))
-    );
+    // FIX: Run test cases SEQUENTIALLY to avoid rate-limiting on public Judge0 instance
+    const results = [];
+    for (const input of stdin) {
+      const result = await runWithJudge0(source_code, language_id, input);
+      results.push(result);
+      // Subtle delay to avoid rapid-fire requests
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
     let allPassed = true;
     const detailedResults = results.map((result, i) => {
@@ -83,7 +100,7 @@ export const executeCode = async (req, res) => {
       data: {
         userId,
         problemId,
-        sourceCode: source_code,
+        sourceCode: source_code, // Prisma Json field handles string safely
         language: getLanguageName(language_id),
         stdin: stdin.join("\n"),
         stdout: JSON.stringify(detailedResults.map((r) => r.stdout)),
@@ -100,7 +117,7 @@ export const executeCode = async (req, res) => {
         time: detailedResults.some((r) => r.time)
           ? JSON.stringify(detailedResults.map((r) => r.time))
           : null,
-        timeSpent: timeSpent || null,
+        timeSpent: timeSpent ? Math.floor(timeSpent) : null,
       },
     });
 
@@ -140,7 +157,8 @@ export const executeCode = async (req, res) => {
       submission: submissionWithTestCase,
     });
   } catch (error) {
-    console.error("Error executing code:", error.message);
-    res.status(500).json({ error: "Failed to execute code" });
+    console.error("Error executing code:", error.stack || error.message);
+    res.status(500).json({ error: "Server error during code execution" });
   }
 };
+
