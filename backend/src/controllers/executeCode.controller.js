@@ -1,17 +1,25 @@
 import { db } from "../libs/db.js";
-import { getLanguageName, LANGUAGE_MAP, JUDGE0_API } from "../libs/piston.lib.js";
+import { getLanguageName, LANGUAGE_MAP, JUDGE0_API, getCodeWrapper } from "../libs/piston.lib.js";
 import axios from "axios";
 
+// Helper to derive function name from title (matching seed.js logic)
+const getFunctionName = (title) => {
+  return title.replace(/[^a-zA-Z0-9 ]/g, "").split(" ").filter(Boolean).map((w, i) => i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()).join("") || "solve";
+};
+
 // Run a single test case through Judge0 CE
-const runWithJudge0 = async (source_code, language_id, stdin) => {
+const runWithJudge0 = async (source_code, language_id, stdin, functionName) => {
   try {
     const langConfig = LANGUAGE_MAP[language_id];
     if (!langConfig) throw new Error(`Unsupported language ID: ${language_id}`);
 
+    // WRAP the user code with backend IO logic
+    const wrappedCode = getCodeWrapper(source_code, language_id, functionName);
+
     const { data } = await axios.post(
       `${JUDGE0_API}/submissions?base64_encoded=false&wait=true`,
       {
-        source_code,
+        source_code: wrappedCode,
         language_id: langConfig.judge0Id,
         stdin: stdin || "",
       },
@@ -66,10 +74,16 @@ export const executeCode = async (req, res) => {
       return res.status(400).json({ error: "Invalid or Missing test cases" });
     }
 
+    // Fetch problem to get title for function name
+    const problem = await db.problem.findUnique({ where: { id: problemId } });
+    if (!problem) return res.status(404).json({ error: "Problem not found" });
+
+    const functionName = getFunctionName(problem.title);
+
     // FIX: Run test cases SEQUENTIALLY to avoid rate-limiting on public Judge0 instance
     const results = [];
     for (const input of stdin) {
-      const result = await runWithJudge0(source_code, language_id, input);
+      const result = await runWithJudge0(source_code, language_id, input, functionName);
       results.push(result);
       // Subtle delay to avoid rapid-fire requests
       await new Promise(resolve => setTimeout(resolve, 500));

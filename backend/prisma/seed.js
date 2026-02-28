@@ -287,13 +287,10 @@ function buildSnippets(title) {
     const fn = title.replace(/[^a-zA-Z0-9 ]/g, "").split(" ").filter(Boolean).map((w, i) => i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()).join("") || "solve";
 
     return {
-        JAVASCRIPT: `// Read inputs from stdin\nconst fs = require('fs');\nconst input = fs.readFileSync(0, 'utf8').trim().split('\\n');\n\n/**\n * @param {string[]} input lines from stdin\n * @return {any}\n */\nfunction ${fn}(input) {\n    // Extract parameters from input array\n    // Example: const nums = JSON.parse(input[0]);\n    \n    // Write your solution here\n    return null;\n}\n\n// Execute and print result\nconsole.log(JSON.stringify(${fn}(input)));`,
-
-        PYTHON: `import sys\nimport json\n\ndef ${fn}(input_lines):\n    # input_lines is a list of strings from stdin\n    # Example: nums = json.loads(input_lines[0])\n    \n    # Write your solution here\n    return None\n\nif __name__ == "__main__":\n    # Read all lines from stdin\n    lines = sys.stdin.read().strip().split('\\n')\n    result = ${fn}(lines)\n    print(json.dumps(result))`,
-
-        JAVA: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        List<String> input = new ArrayList<>();\n        while (sc.hasNextLine()) {\n            input.add(sc.nextLine());\n        }\n        \n        Solution sol = new Solution();\n        System.out.println(sol.${fn}(input));\n    }\n}\n\nclass Solution {\n    public Object ${fn}(List<String> input) {\n        // Write logic here\n        return null;\n    }\n}`,
-
-        CPLUSPLUS: `#include <iostream>\n#include <vector>\n#include <string>\n\nusing namespace std;\n\nclass Solution {\npublic:\n    void ${fn}(vector<string>& input) {\n        // Write logic here and use cout\n        cout << "null" << endl;\n    }\n};\n\nint main() {\n    string line;\n    vector<string> input;\n    while (getline(cin, line)) {\n        input.push_back(line);\n    }\n    Solution sol;\n    sol.${fn}(input);\n    return 0;\n}`,
+        JAVASCRIPT: `/**\n * @param {any} input\n * @return {any}\n */\nfunction ${fn}(...args) {\n    // Write your solution here\n}`,
+        PYTHON: `def ${fn}(*args):\n    # Write your solution here\n    pass`,
+        JAVA: `class Solution {\n    public Object ${fn}(List<String> input) {\n        // Write logic here\n        return null;\n    }\n}`,
+        CPLUSPLUS: `class Solution {\npublic:\n    void ${fn}(vector<string>& input) {\n        // Write logic here and use cout\n        cout << "null" << endl;\n    }\n};`,
     };
 }
 

@@ -29,6 +29,88 @@ export function getLanguageId(language) {
   return map[language.toUpperCase()];
 }
 
+/**
+ * Wraps user code with IO boilerplate based on language
+ */
+export function getCodeWrapper(sourceCode, languageId, functionName) {
+  const lang = LANGUAGE_MAP[languageId]?.name;
+
+  switch (lang) {
+    case "JAVASCRIPT":
+      return `
+const fs = require('fs');
+const input = fs.readFileSync(0, 'utf8').trim().split('\\n');
+${sourceCode}
+try {
+  const result = ${functionName}(...input.map(line => {
+    try { return JSON.parse(line); } catch(e) { return line; }
+  }));
+  console.log(JSON.stringify(result));
+} catch (e) {
+  console.error(e.message);
+  process.exit(1);
+}`;
+
+    case "PYTHON":
+      return `
+import sys
+import json
+${sourceCode}
+if __name__ == "__main__":
+    try:
+        lines = sys.stdin.read().strip().split('\\n')
+        args = []
+        for line in lines:
+            try: args.append(json.loads(line))
+            except: args.append(line)
+        result = ${functionName}(*args)
+        print(json.dumps(result))
+    except Exception as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)`;
+
+    case "JAVA":
+      return `
+import java.util.*;
+import java.util.stream.*;
+${sourceCode}
+public class Main {
+    public static void main(String[] args) {
+        try {
+            Scanner sc = new Scanner(System.in);
+            List<String> lines = new ArrayList<>();
+            while (sc.hasNextLine()) lines.add(sc.nextLine());
+            Solution sol = new Solution();
+            // Simple string passing for Java boilerplate for now
+            System.out.println(sol.${functionName}(lines));
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+    }
+}`;
+
+    case "C++":
+      return `
+#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+${sourceCode}
+int main() {
+    string line;
+    vector<string> input;
+    while (getline(cin, line)) input.push_back(line);
+    Solution sol;
+    sol.${functionName}(input);
+    return 0;
+}`;
+
+    default:
+      return sourceCode;
+  }
+}
+
 // ALIASES for backward compatibility with existing controllers
 export function getPistonLanguageId(language) {
   return getLanguageId(language);
