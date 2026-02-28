@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { axiosInstance } from "../lib/axios";
-import { Star, Zap, Clock, Code, CheckCircle, TrendingUp, X, Loader } from "lucide-react";
+import { Star, Zap, Clock, Code, CheckCircle, TrendingUp, X, Loader, Minus } from "lucide-react";
 
 const CodeRater = ({ submissionId, onClose }) => {
     const [rating, setRating] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isMinimized, setIsMinimized] = useState(false);
 
     const fetchRating = async () => {
         if (!submissionId) {
@@ -40,6 +41,29 @@ const CodeRater = ({ submissionId, onClose }) => {
         status: <TrendingUp size={14} />,
     };
 
+    if (isMinimized && rating) {
+        return (
+            <div
+                onClick={() => setIsMinimized(false)}
+                className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-base-200 border border-primary/30 p-3 rounded-2xl shadow-xl cursor-pointer hover:scale-105 transition-all group animate-bounce-subtle"
+            >
+                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-black ${gradeColors[rating.grade]}`}>
+                    {rating.grade}
+                </div>
+                <div className="pr-2">
+                    <p className="text-xs font-bold text-primary">Code Rating</p>
+                    <p className="text-sm font-black">{rating.totalScore}% Quality</p>
+                </div>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onClose(); }}
+                    className="btn btn-ghost btn-xs btn-circle opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <X size={14} />
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="relative w-full max-w-md mx-4 bg-base-200 border border-white/10 rounded-3xl shadow-2xl p-6 space-y-5">
@@ -49,9 +73,16 @@ const CodeRater = ({ submissionId, onClose }) => {
                         <Star className="text-primary" size={22} />
                         <h2 className="text-xl font-bold">Code Rater</h2>
                     </div>
-                    <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {rating && (
+                            <button onClick={() => setIsMinimized(true)} className="btn btn-ghost btn-sm btn-circle" title="Minimize">
+                                <Minus size={18} />
+                            </button>
+                        )}
+                        <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle" title="Close">
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {!rating && !loading && (

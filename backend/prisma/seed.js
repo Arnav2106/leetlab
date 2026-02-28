@@ -285,11 +285,15 @@ const P = [
 
 function buildSnippets(title) {
     const fn = title.replace(/[^a-zA-Z0-9 ]/g, "").split(" ").filter(Boolean).map((w, i) => i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()).join("") || "solve";
+
     return {
-        JAVASCRIPT: `/**\n * ${title}\n */\nvar ${fn} = function(input) {\n    // Write your solution here\n};`,
-        PYTHON: `class Solution:\n    def ${fn}(self, input):\n        # Write your solution here\n        pass`,
-        JAVA: `class Solution {\n    public Object ${fn}(Object input) {\n        // Write your solution here\n        return null;\n    }\n}`,
-        CPLUSPLUS: `class Solution {\npublic:\n    auto ${fn}(auto input) {\n        // Write your solution here\n        return 0;\n    }\n};`,
+        JAVASCRIPT: `// Read inputs from stdin\nconst fs = require('fs');\nconst input = fs.readFileSync(0, 'utf8').trim().split('\\n');\n\n/**\n * @param {string[]} input lines from stdin\n * @return {any}\n */\nfunction ${fn}(input) {\n    // Extract parameters from input array\n    // Example: const nums = JSON.parse(input[0]);\n    \n    // Write your solution here\n    return null;\n}\n\n// Execute and print result\nconsole.log(JSON.stringify(${fn}(input)));`,
+
+        PYTHON: `import sys\nimport json\n\ndef ${fn}(input_lines):\n    # input_lines is a list of strings from stdin\n    # Example: nums = json.loads(input_lines[0])\n    \n    # Write your solution here\n    return None\n\nif __name__ == "__main__":\n    # Read all lines from stdin\n    lines = sys.stdin.read().strip().split('\\n')\n    result = ${fn}(lines)\n    print(json.dumps(result))`,
+
+        JAVA: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        List<String> input = new ArrayList<>();\n        while (sc.hasNextLine()) {\n            input.add(sc.nextLine());\n        }\n        \n        Solution sol = new Solution();\n        System.out.println(sol.${fn}(input));\n    }\n}\n\nclass Solution {\n    public Object ${fn}(List<String> input) {\n        // Write logic here\n        return null;\n    }\n}`,
+
+        CPLUSPLUS: `#include <iostream>\n#include <vector>\n#include <string>\n\nusing namespace std;\n\nclass Solution {\npublic:\n    void ${fn}(vector<string>& input) {\n        // Write logic here and use cout\n        cout << "null" << endl;\n    }\n};\n\nint main() {\n    string line;\n    vector<string> input;\n    while (getline(cin, line)) {\n        input.push_back(line);\n    }\n    Solution sol;\n    sol.${fn}(input);\n    return 0;\n}`,
     };
 }
 
@@ -309,35 +313,32 @@ async function main() {
     const rows = P.map(([title, desc, diff, tags], i) => {
         const s = buildSnippets(title);
 
-        // Generate real examples based on the problem description
         const exampleSets = [
-            { input: "nums = [2,7,11,15], target = 9", output: "[0,1]", explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]." },
-            { input: "nums = [1,2,3,4,5], target = 5", output: "[1,2]", explanation: "Multiple valid pairs exist. Return the first found." },
-            { input: "s = \"hello world\"", output: "Varies by problem", explanation: "See the problem statement for details." },
-            { input: "root = [1,2,3,null,null,4,5]", output: "Varies by problem", explanation: "Tree-based problems — see description." },
-            { input: "grid = [[1,1,0],[1,1,0],[0,0,1]]", output: "Varies by problem", explanation: "Graph/matrix problem — trace through the grid." },
+            { input: '[2,7,11,15]\\n9', output: '[0,1]', explanation: 'nums[0] + nums[1] == 9' },
+            { input: '[1,2,3,4,5]\\n5', output: '[1,2]', explanation: 'Example output' },
+            { input: '"hello"', output: '"olleh"', explanation: 'Reversed string' },
+            { input: '[1,null,2,3]', output: '[1,null,2]', explanation: 'Tree structure' },
+            { input: '[[1,1],[1,0]]', output: '1', explanation: 'Grid count' },
         ];
         const ex = exampleSets[i % exampleSets.length];
 
-        // Generate real constraints per difficulty
         const constraintsMap = {
-            EASY: `1 <= nums.length <= 10^4\n-10^9 <= nums[i] <= 10^9\nTime Limit: 1 second\nMemory Limit: 256 MB`,
-            MEDIUM: `1 <= nums.length <= 10^5\n-10^9 <= nums[i] <= 10^9\nTime Limit: 2 seconds\nMemory Limit: 256 MB`,
-            HARD: `1 <= nums.length <= 10^6\n-10^9 <= nums[i] <= 10^9\nTime Limit: 3 seconds\nMemory Limit: 512 MB`,
+            EASY: "1 <= n <= 10^4",
+            MEDIUM: "1 <= n <= 10^5",
+            HARD: "1 <= n <= 10^6",
         };
 
         return {
             title, description: desc, difficulty: diff, userId: admin.id, tags,
             examples: {
-                example1: { input: ex.input, output: ex.output, explanation: ex.explanation },
-                example2: { input: exampleSets[(i + 1) % exampleSets.length].input, output: exampleSets[(i + 1) % exampleSets.length].output, explanation: exampleSets[(i + 1) % exampleSets.length].explanation },
+                example1: { input: ex.input.replace("\\n", "\n"), output: ex.output, explanation: ex.explanation },
+                example2: { input: exampleSets[(i + 1) % exampleSets.length].input.replace("\\n", "\n"), output: exampleSets[(i + 1) % exampleSets.length].output, explanation: "See description" },
             },
             constraints: constraintsMap[diff],
-            hints: i % 2 === 0 ? `Consider a ${tags[0]} approach. Think about time complexity.` : `Try breaking the problem into smaller subproblems using ${tags[tags.length - 1]}.`,
-            editorial: `The optimal approach for "${title}" uses ${tags.join(" + ")} techniques. Think about edge cases and how to handle them efficiently.`,
+            hints: `Try a ${tags[0]} approach.`,
             testcases: [
-                { input: ex.input, output: ex.output },
-                { input: exampleSets[(i + 2) % exampleSets.length].input, output: exampleSets[(i + 2) % exampleSets.length].output },
+                { input: ex.input.replace("\\n", "\n"), output: ex.output },
+                { input: exampleSets[(i + 1) % exampleSets.length].input.replace("\\n", "\n"), output: exampleSets[(i + 1) % exampleSets.length].output },
             ],
             codeSnippets: s, referenceSolutions: s,
         };

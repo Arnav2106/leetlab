@@ -79,6 +79,8 @@ export const executeCode = async (req, res) => {
     const detailedResults = results.map((result, i) => {
       const stdout = result.stdout?.trim();
       const expected_output = expected_outputs[i]?.trim();
+
+      // Relaxed comparison: trim both and compare
       const passed = stdout === expected_output && result.status === "Accepted";
       if (!passed) allPassed = false;
 
