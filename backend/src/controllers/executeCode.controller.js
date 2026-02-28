@@ -1,35 +1,41 @@
 import { db } from "../libs/db.js";
-import { getLanguageName, LANGUAGE_MAP } from "../libs/piston.lib.js";
+import { getLanguageName, LANGUAGE_MAP, JUDGE0_API } from "../libs/piston.lib.js";
 import axios from "axios";
 
-const PISTON_API = "https://emkc.org/api/v2/piston";
-
-// Run a single test case through Piston
-const runWithPiston = async (source_code, language_id, stdin) => {
+// Run a single test case through Judge0 CE
+const runWithJudge0 = async (source_code, language_id, stdin) => {
   const langConfig = LANGUAGE_MAP[language_id];
   if (!langConfig) throw new Error(`Unsupported language ID: ${language_id}`);
 
-  const { data } = await axios.post(`${PISTON_API}/execute`, {
-    language: langConfig.piston.language,
-    version: langConfig.piston.version,
-    files: [{ content: source_code }],
-    stdin: stdin || "",
-  });
+  const { data } = await axios.post(
+    `${JUDGE0_API}/submissions?base64_encoded=false&wait=true`,
+    {
+      source_code,
+      language_id: langConfig.judge0Id,
+      stdin: stdin || "",
+    },
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
 
-  const hasCompileError = !!data.compile?.stderr;
-  const exitCode = data.run?.code ?? 0;
+  const statusDesc = data.status?.description || "Unknown";
+  const isAccepted = data.status?.id === 3;
+  const isCompileError = data.status?.id === 6;
 
   return {
-    stdout: data.run?.stdout?.trim() || "",
-    stderr: data.run?.stderr || data.compile?.stderr || null,
-    compile_output: data.compile?.stderr || null,
-    status: hasCompileError
+    stdout: data.stdout?.trim() || "",
+    stderr: data.stderr || null,
+    compile_output: data.compile_output || null,
+    status: isCompileError
       ? "Compilation Error"
-      : exitCode !== 0
-        ? "Runtime Error"
-        : "Accepted",
-    time: data.run?.wall_time != null ? `${data.run.wall_time} s` : null,
-    memory: data.run?.memory != null ? `${data.run.memory} KB` : null,
+      : isAccepted
+        ? "Accepted"
+        : statusDesc === "Wrong Answer"
+          ? "Wrong Answer"
+          : "Runtime Error",
+    time: data.time ? `${data.time} s` : null,
+    memory: data.memory ? `${data.memory} KB` : null,
   };
 };
 
@@ -47,13 +53,13 @@ export const executeCode = async (req, res) => {
       return res.status(400).json({ error: "Invalid or Missing test cases" });
     }
 
-    // Run all test cases in parallel via Piston
-    const pistonResults = await Promise.all(
-      stdin.map((input) => runWithPiston(source_code, language_id, input))
+    // Run all test cases in parallel via Judge0 CE
+    const results = await Promise.all(
+      stdin.map((input) => runWithJudge0(source_code, language_id, input))
     );
 
     let allPassed = true;
-    const detailedResults = pistonResults.map((result, i) => {
+    const detailedResults = results.map((result, i) => {
       const stdout = result.stdout?.trim();
       const expected_output = expected_outputs[i]?.trim();
       const passed = stdout === expected_output && result.status === "Accepted";
