@@ -1,5 +1,5 @@
-// Judge0 CE API — Free public code execution (replacement for defunct Piston)
-const JUDGE0_API = "https://ce.judge0.com";
+// Judge0 CE API — Self-hosted instance (replaces defunct Piston)
+const JUDGE0_API = process.env.JUDGE0_URL || "http://localhost:2358";
 
 // Judge0 CE Language IDs
 export const LANGUAGE_MAP = {
@@ -39,12 +39,22 @@ export function getCodeWrapper(sourceCode, languageId, functionName) {
     case "JAVASCRIPT":
       return `
 const fs = require('fs');
-const input = fs.readFileSync(0, 'utf8').trim().split('\\n');
+const inputBytes = fs.readFileSync(0);
+const inputStr = inputBytes.toString();
+const inputLines = inputStr.trim() ? inputStr.trim().split('\\n') : [];
+
 ${sourceCode}
+
 try {
-  const result = ${functionName}(...input.map(line => {
+  const parsedArgs = inputLines.map(line => {
     try { return JSON.parse(line); } catch(e) { return line; }
-  }));
+  });
+  
+  if (typeof ${functionName} !== 'function') {
+     throw new Error("Function '${functionName}' is not defined in your code.");
+  }
+  
+  const result = ${functionName}(...parsedArgs);
   console.log(JSON.stringify(result));
 } catch (e) {
   console.error(e.message);
@@ -55,14 +65,23 @@ try {
       return `
 import sys
 import json
+
 ${sourceCode}
+
 if __name__ == "__main__":
     try:
-        lines = sys.stdin.read().strip().split('\\n')
+        input_data = sys.stdin.read().strip()
+        lines = input_data.split('\\n') if input_data else []
         args = []
         for line in lines:
-            try: args.append(json.loads(line))
-            except: args.append(line)
+            try: 
+                args.append(json.loads(line))
+            except json.JSONDecodeError: 
+                args.append(line)
+        
+        if '${functionName}' not in globals():
+             raise NameError("Function '${functionName}' is not defined.")
+             
         result = ${functionName}(*args)
         print(json.dumps(result))
     except Exception as e:

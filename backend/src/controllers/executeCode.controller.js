@@ -4,7 +4,15 @@ import axios from "axios";
 
 // Helper to derive function name from title (matching seed.js logic)
 const getFunctionName = (title) => {
-  return title.replace(/[^a-zA-Z0-9 ]/g, "").split(" ").filter(Boolean).map((w, i) => i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()).join("") || "solve";
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((word, index) =>
+      index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join("");
 };
 
 // Run a single test case through Judge0 CE
