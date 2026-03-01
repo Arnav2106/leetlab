@@ -7,9 +7,9 @@ const prisma = new PrismaClient();
 // Format: [title, description, difficulty, tags]
 // ═══════════════════════════════════════════════════════════════════════════
 const P = [
-    ["Two Sum", "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.", "EASY", ["Array", "Hash Table"]],
-    ["Best Time to Buy and Sell Stock", "Find the maximum profit from buying and selling a stock once given daily prices.", "EASY", ["Array", "DP"]],
-    ["Contains Duplicate", "Given an integer array, return true if any value appears at least twice.", "EASY", ["Array", "Hash Table"]],
+    ["Two Sum", "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume that each input would have exactly one solution, and you may not use the same element twice.", "EASY", ["Array", "Hash Table"]],
+    ["Best Time to Buy and Sell Stock", "You are given an array `prices` where `prices[i]` is the price of a given stock on the `i`-th day. You want to maximize your profit by choosing a single day to buy one stock and choosing a different day in the future to sell that stock.", "EASY", ["Array", "DP"]],
+    ["Contains Duplicate", "Given an integer array `nums`, return `true` if any value appears at least twice in the array, and return `false` if every element is distinct.", "EASY", ["Array", "Hash Table"]],
     ["Product of Array Except Self", "Return an array where each element is the product of all elements except itself, without division.", "MEDIUM", ["Array", "Prefix Sum"]],
     ["Maximum Subarray", "Find the contiguous subarray with the largest sum using Kadane's algorithm.", "MEDIUM", ["Array", "DP"]],
     ["Maximum Product Subarray", "Find the contiguous subarray within an array that has the largest product.", "MEDIUM", ["Array", "DP"]],
@@ -310,14 +310,61 @@ async function main() {
     const rows = P.map(([title, desc, diff, tags], i) => {
         const s = buildSnippets(title);
 
-        const exampleSets = [
-            { input: '[2,7,11,15]\\n9', output: '[0,1]', explanation: 'nums[0] + nums[1] == 9' },
-            { input: '[1,2,3,4,5]\\n5', output: '[1,2]', explanation: 'Example output' },
+        // Specific high-quality examples for the most popular problems
+        const problemSpecificData = {
+            "Two Sum": {
+                examples: {
+                    example1: { input: "[2,7,11,15]\n9", output: "[0,1]", explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]." },
+                    example2: { input: "[3,2,4]\n6", output: "[1,2]", explanation: "nums[1] + nums[2] == 6." }
+                },
+                testcases: [
+                    { input: "[2,7,11,15]\n9", output: "[0,1]" },
+                    { input: "[3,2,4]\n6", output: "[1,2]" }
+                ]
+            },
+            "Contains Duplicate": {
+                examples: {
+                    example1: { input: "[1,2,3,1]", output: "true", explanation: "1 appears twice." },
+                    example2: { input: "[1,2,3,4]", output: "false", explanation: "All elements are distinct." }
+                },
+                testcases: [
+                    { input: "[1,2,3,1]", output: "true" },
+                    { input: "[1,2,3,4]", output: "false" }
+                ]
+            },
+            "Valid Palindrome": {
+                examples: {
+                    example1: { input: "\"A man, a plan, a canal: Panama\"", output: "true", explanation: "\"amanaplanacanalpanama\" is a palindrome." },
+                    example2: { input: "\"race a car\"", output: "false", explanation: "\"raceacar\" is not a palindrome." }
+                },
+                testcases: [
+                    { input: "\"A man, a plan, a canal: Panama\"", output: "true" },
+                    { input: "\"race a car\"", output: "false" }
+                ]
+            }
+        };
+
+        const defaultExampleSets = [
+            { input: '[1,2,3,4,5]\n5', output: '[1,2]', explanation: 'Example output' },
             { input: '"hello"', output: '"olleh"', explanation: 'Reversed string' },
             { input: '[1,null,2,3]', output: '[1,null,2]', explanation: 'Tree structure' },
-            { input: '[[1,1],[1,0]]', output: '1', explanation: 'Grid count' },
         ];
-        const ex = exampleSets[i % exampleSets.length];
+
+        let exData = problemSpecificData[title];
+
+        if (!exData) {
+            const ex = defaultExampleSets[i % defaultExampleSets.length];
+            exData = {
+                examples: {
+                    example1: { input: ex.input.replace("\\n", "\n"), output: ex.output, explanation: ex.explanation },
+                    example2: { input: defaultExampleSets[(i + 1) % defaultExampleSets.length].input.replace("\\n", "\n"), output: defaultExampleSets[(i + 1) % defaultExampleSets.length].output, explanation: "See description" },
+                },
+                testcases: [
+                    { input: ex.input.replace("\\n", "\n"), output: ex.output },
+                    { input: defaultExampleSets[(i + 1) % defaultExampleSets.length].input.replace("\\n", "\n"), output: defaultExampleSets[(i + 1) % defaultExampleSets.length].output },
+                ]
+            };
+        }
 
         const constraintsMap = {
             EASY: "1 <= n <= 10^4",
@@ -326,18 +373,17 @@ async function main() {
         };
 
         return {
-            title, description: desc, difficulty: diff, userId: admin.id, tags,
-            examples: {
-                example1: { input: ex.input.replace("\\n", "\n"), output: ex.output, explanation: ex.explanation },
-                example2: { input: exampleSets[(i + 1) % exampleSets.length].input.replace("\\n", "\n"), output: exampleSets[(i + 1) % exampleSets.length].output, explanation: "See description" },
-            },
+            title,
+            description: desc,
+            difficulty: diff,
+            userId: admin.id,
+            tags,
+            examples: exData.examples,
             constraints: constraintsMap[diff],
             hints: `Try a ${tags[0]} approach.`,
-            testcases: [
-                { input: ex.input.replace("\\n", "\n"), output: ex.output },
-                { input: exampleSets[(i + 1) % exampleSets.length].input.replace("\\n", "\n"), output: exampleSets[(i + 1) % exampleSets.length].output },
-            ],
-            codeSnippets: s, referenceSolutions: s,
+            testcases: exData.testcases,
+            codeSnippets: s,
+            referenceSolutions: s,
         };
     });
 
