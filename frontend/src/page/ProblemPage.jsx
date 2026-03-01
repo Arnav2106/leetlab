@@ -134,7 +134,7 @@ const ProblemPage = () => {
             </div>
 
             <div className="prose prose-invert max-w-none text-gray-300 leading-relaxed">
-              <p className="text-base">{problem.description}</p>
+              <div className="text-base whitespace-pre-wrap">{problem.description}</div>
 
               {problem.examples && (
                 <div className="mt-8 space-y-6">
